@@ -25,4 +25,4 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          npx eas-build --platform android --profile preview --non-interactive --no-wait
+          npx eas build --platform android --profile preview --non-interactive --no-wait
