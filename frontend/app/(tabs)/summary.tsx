@@ -4,6 +4,7 @@ import * as Haptics from "expo-haptics";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -62,6 +63,10 @@ export default function SummaryScreen() {
     if (busy) return; // guard against a second share while one is in progress
     if (!employee || entries.length === 0) {
       showToast("Aucune donnée à exporter");
+      return;
+    }
+    if (Platform.OS === "web") {
+      showToast("L'export est disponible sur l'app mobile (Expo Go)");
       return;
     }
     try {
