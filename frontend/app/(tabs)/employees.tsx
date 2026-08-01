@@ -279,9 +279,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   addText: { fontSize: fontSize.lg },
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
-  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  handle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center", marginBottom: spacing.md },
   sheetTitle: { fontSize: 24, letterSpacing: 1, marginBottom: spacing.md },
   input: {
     height: 52,
