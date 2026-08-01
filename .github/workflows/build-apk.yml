@@ -26,5 +26,5 @@ jobs:
       - name: Install dependencies & Build APK
         run: |
           cd frontend
-          npm install
-          npx eas-build --platform android --profile preview --non-interactive
+          npm install --legacy-peer-deps
+          npx eas-build --platform android --profile preview --non-interactive --no-wait
