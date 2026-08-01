@@ -59,6 +59,7 @@ export default function SummaryScreen() {
   };
 
   const doExport = async (kind: "pdf" | "csv") => {
+    if (busy) return; // guard against a second share while one is in progress
     if (!employee || entries.length === 0) {
       showToast("Aucune donnée à exporter");
       return;
@@ -68,8 +69,9 @@ export default function SummaryScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       if (kind === "pdf") await exportPDF(employee, monthKey, entries);
       else await exportCSV(employee, monthKey, entries);
-    } catch {
-      showToast("Échec de l'export");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Échec de l'export";
+      showToast(msg);
     } finally {
       setBusy(null);
     }

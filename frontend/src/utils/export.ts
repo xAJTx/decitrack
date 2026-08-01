@@ -1,4 +1,4 @@
-import * as FileSystem from "expo-file-system/legacy";
+import { File, Paths } from "expo-file-system";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 
@@ -21,6 +21,23 @@ function totalMinutes(rows: Row[]): number {
   return rows.reduce((sum, r) => sum + r.minutes, 0);
 }
 
+function safeName(name: string): string {
+  return name.replace(/[^a-z0-9]/gi, "_") || "employe";
+}
+
+async function shareUri(
+  uri: string,
+  mimeType: string,
+  uti: string,
+  title: string,
+): Promise<void> {
+  const available = await Sharing.isAvailableAsync();
+  if (!available) {
+    throw new Error("Le partage n'est pas disponible sur cet appareil");
+  }
+  await Sharing.shareAsync(uri, { mimeType, dialogTitle: title, UTI: uti });
+}
+
 export async function exportCSV(
   employee: Employee,
   monthKey: string,
@@ -28,10 +45,10 @@ export async function exportCSV(
 ): Promise<void> {
   const rows = buildRows(entries);
   const lines = [
-    `Employé;${employee.name}`,
+    `Employe;${employee.name}`,
     `Mois;${formatMonthLabel(monthKey)}`,
     "",
-    "Date;Début;Fin;Pause (min);Heures (standard);Heures (décimal)",
+    "Date;Debut;Fin;Pause (min);Heures (standard);Heures (decimal)",
   ];
   for (const { entry, minutes } of rows) {
     const breakMin = entry.breaks.reduce((s, b) => {
@@ -39,7 +56,9 @@ export async function exportCSV(
       const be = b.end.split(":");
       if (bs.length === 2 && be.length === 2) {
         const dm =
-          Number(be[0]) * 60 + Number(be[1]) - (Number(bs[0]) * 60 + Number(bs[1]));
+          Number(be[0]) * 60 +
+          Number(be[1]) -
+          (Number(bs[0]) * 60 + Number(bs[1]));
         return s + (dm > 0 ? dm : 0);
       }
       return s;
@@ -60,17 +79,24 @@ export async function exportCSV(
   lines.push(`TOTAL;;;;${formatStandard(total)};${toDecimal(total)}`);
 
   const csv = "\uFEFF" + lines.join("\n");
-  const fileUri = `${FileSystem.cacheDirectory}DeciTrack_${employee.name.replace(/\s+/g, "_")}_${monthKey}.csv`;
-  await FileSystem.writeAsStringAsync(fileUri, csv, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(fileUri, {
-      mimeType: "text/csv",
-      dialogTitle: "Exporter le récapitulatif (CSV)",
-      UTI: "public.comma-separated-values-text",
-    });
+
+  // Stable SDK 54 File API (avoids the deprecated /legacy module that
+  // failed to write on some Android devices).
+  const file = new File(Paths.cache, `DeciTrack_${safeName(employee.name)}_${monthKey}.csv`);
+  try {
+    if (file.exists) file.delete();
+  } catch {
+    // ignore stale-file cleanup errors
   }
+  file.create();
+  file.write(csv);
+
+  await shareUri(
+    file.uri,
+    "text/csv",
+    "public.comma-separated-values-text",
+    "Exporter le recapitulatif (CSV)",
+  );
 }
 
 export async function exportPDF(
@@ -86,7 +112,7 @@ export async function exportPDF(
       ({ entry, minutes }) => `
       <tr>
         <td>${formatFullDate(entry.date)}</td>
-        <td class="c">${entry.start} – ${entry.end}</td>
+        <td class="c">${entry.start} &ndash; ${entry.end}</td>
         <td class="c">${formatStandard(minutes)}</td>
         <td class="c dec">${toDecimal(minutes)} h</td>
       </tr>`,
@@ -97,6 +123,7 @@ export async function exportPDF(
   <html>
     <head>
       <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
         * { font-family: -apple-system, Helvetica, Arial, sans-serif; }
         body { padding: 32px; color: #111; }
@@ -112,24 +139,23 @@ export async function exportPDF(
       </style>
     </head>
     <body>
-      <h1>DeciTrack — Récapitulatif</h1>
-      <div class="sub">${employee.name} · ${formatMonthLabel(monthKey)}</div>
+      <h1>DeciTrack &mdash; Recapitulatif</h1>
+      <div class="sub">${employee.name} &middot; ${formatMonthLabel(monthKey)}</div>
       <table>
         <thead>
-          <tr><th>Date</th><th style="text-align:center">Horaire</th><th style="text-align:center">Standard</th><th style="text-align:center">Décimal (admin)</th></tr>
+          <tr><th>Date</th><th style="text-align:center">Horaire</th><th style="text-align:center">Standard</th><th style="text-align:center">Decimal (admin)</th></tr>
         </thead>
-        <tbody>${bodyRows || '<tr><td colspan="4">Aucune entrée</td></tr>'}</tbody>
+        <tbody>${bodyRows || '<tr><td colspan="4">Aucune entree</td></tr>'}</tbody>
       </table>
-      <div class="total">Total du mois : ${formatStandard(total)} &nbsp;·&nbsp; <span class="dec">${toDecimal(total)} h</span></div>
+      <div class="total">Total du mois : ${formatStandard(total)} &nbsp;&middot;&nbsp; <span class="dec">${toDecimal(total)} h</span></div>
     </body>
   </html>`;
 
   const { uri } = await Print.printToFileAsync({ html });
-  if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(uri, {
-      mimeType: "application/pdf",
-      dialogTitle: "Exporter le récapitulatif (PDF)",
-      UTI: "com.adobe.pdf",
-    });
-  }
+  await shareUri(
+    uri,
+    "application/pdf",
+    "com.adobe.pdf",
+    "Exporter le recapitulatif (PDF)",
+  );
 }
