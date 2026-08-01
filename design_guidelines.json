@@ -1,0 +1,140 @@
+{
+  "app_name": "DeciTrack",
+  "personality": "7 Dark-First Utility DARK",
+  "personality_one_liner": "A sharp, live operational command center designed for fast scanning, immediate data hierarchy, and sweat-proof readability.",
+  "color": {
+    "surface": "#111111",
+    "onSurface": "#F3F3F3",
+    "surfaceSecondary": "#1C1C1C",
+    "onSurfaceSecondary": "#E0E0E0",
+    "surfaceTertiary": "#2A2A2A",
+    "onSurfaceTertiary": "#CCCCCC",
+    "surfaceInverse": "#F5F5F5",
+    "onSurfaceInverse": "#111111",
+    "brand": "#E65100",
+    "brandPrimary": "#FF6D00",
+    "onBrandPrimary": "#111111",
+    "brandSecondary": "#FF8F00",
+    "onBrandSecondary": "#111111",
+    "brandTertiary": "#4E260C",
+    "onBrandTertiary": "#FFB74D",
+    "success": "#2E7D32",
+    "onSuccess": "#FFFFFF",
+    "warning": "#F57F17",
+    "onWarning": "#111111",
+    "error": "#B71C1C",
+    "onError": "#FFFFFF",
+    "info": "#455A64",
+    "onInfo": "#FFFFFF",
+    "border": "#333333",
+    "borderStrong": "#555555",
+    "divider": "#222222"
+  },
+  "typography": {
+    "displayFontFamily": "Barlow Condensed",
+    "textFontFamily": "IBM Plex Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Use tight, grid-like spacing to maximize information density without feeling cluttered. Keep a mechanical rhythm using dividers instead of padding bloat.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 4,
+    "md": 8,
+    "lg": 12,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "false",
+    "do's": [
+      "Use solid surfaceSecondary and surfaceTertiary for elevation instead of glass, ensuring max readability on dense data screens."
+    ],
+    "dont's": [
+      "Never use blur or glassmorphism on this app. It clashes with the sharp, utility-first personality."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "solid surfaceSecondary",
+      "android": "solid surfaceSecondary",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler",
+    "export": "expo-print and expo-file-system"
+  },
+  "screens": [
+    {
+      "name": "Time Entry (Home)",
+      "purpose": "Log daily hours efficiently with real-time conversion feedback.",
+      "states": {
+        "loading": "Centered brand-colored spinner.",
+        "empty": "N/A for form, but missing selected employee shows 'Select Employee to Start' illustration.",
+        "error": "Red inline error below failed time inputs + retry button."
+      },
+      "layout": "Header: Employee dropdown selector + Light/Dark mode toggle. Below Header: Horizontal scrolling 7-day calendar strip. Hero Section: A large, stacked dual metric display (Standard hours in IBM Plex Sans, Decimal output aggressively highlighted in Barlow Condensed). Form Area: Single column, labels above inputs. Row 1: Start Time. Row 2: Break Time List (dynamically add multiple break start/end pairs). Row 3: End Time. Action: Sticky 'Save Entry' button anchored at the safe-area bottom over the scrolling content."
+    },
+    {
+      "name": "Summary & Export",
+      "purpose": "Review logged days for the month and generate admin reports.",
+      "states": {
+        "loading": "Skeleton rows reflecting the table structure.",
+        "empty": "Digital clock minimalist image, 'No entries found for this month.', and CTA to 'Log Hours'.",
+        "error": "Error message with 'Reload Data' button."
+      },
+      "layout": "Top: Month selector. Content: Flat list of days grouped by week with thick dividers between weeks. Each row displays the Date, Standard Time, and prominent Decimal Time on the right edge. Bottom: Two sticky buttons side-by-side or stacked ('Export PDF' and 'Export CSV')."
+    },
+    {
+      "name": "Employees",
+      "purpose": "Manage the list of employees for the time tracker.",
+      "states": {
+        "loading": "Skeleton rows.",
+        "empty": "Monochrome office desk image, 'No employees added.', CTA 'Add Employee'.",
+        "error": "Toast or inline message 'Failed to save employee'."
+      },
+      "layout": "Simple list of employees displaying name and total hours logged this month. Floating Action Button (FAB) or sticky bottom button to 'Add Employee'."
+    }
+  ],
+  "images": {
+    "empty_summary": {
+      "url": "https://images.unsplash.com/photo-1778136157872-44684bf44c57?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZGlnaXRhbCUyMGNsb2NrJTIwZGFya3xlbnwwfHx8fDE3ODU1NDQyMTR8MA&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1778136157872-44684bf44c57?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwZGlnaXRhbCUyMGNsb2NrJTIwZGFya3xlbnwwfHx8fDE3ODU1NDQyMTR8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Minimalist digital clock in the dark"
+    },
+    "empty_employees": {
+      "url": "https://images.unsplash.com/photo-1510519138101-570d1dca3d66?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxvZmZpY2UlMjBkZXNrJTIwZGFyayUyMG1vbm9jaHJvbWV8ZW58MHx8fHwxNzg1NTQ0MjE0fDA&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1510519138101-570d1dca3d66?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwyfHxvZmZpY2UlMjBkZXNrJTIwZGFyayUyMG1vbm9jaHJvbWV8ZW58MHx8fHwxNzg1NTQ0MjE0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Dark monochrome office desk setup"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Implement the '7 Dark-First Utility DARK' personality. The app should feel like an active command-center. Rely on hard dividers and background tonality (surfaceSecondary) to separate sections, not shadows or blur.",
+    "BANNED: Any shade of blue, purple, or indigo. Stick strictly to the warm amber/rust brand color against the obsidian dark surfaces.",
+    "Ensure 'Barlow Condensed' is heavily used for the live numbers (the standard vs decimal output) to create aggressive, clear numeric hierarchy.",
+    "Form design: Implement a single-column flow with labels directly above the inputs. Ensure the 'Add Break' function dynamically injects a Start/End time pair.",
+    "Sticky Actions: The 'Save Entry' CTA must be locked above the bottom safe area (with safe-area clearance) using absolute positioning so the form scrolls behind it.",
+    "Export Requirements: Integrate `expo-print` and `expo-file-system` to handle CSV and PDF local generation.",
+    "The default theme MUST be Dark per the user request, but implement a context toggle for Light Mode. For Light Mode tokens: surface: #FAFAFA, surfaceSecondary: #FFFFFF, surfaceTertiary: #F0F0F0, border: #E0E0E0, onSurface: #111111. Keep the same Amber brand color.",
+    "Image Scrim Rule: Any text sitting over the Unsplash empty state images must use a vertical 3-stop linear-gradient (transparent to 70%+ surfaceInverse) to ensure text contrast.",
+    "Haptics: Provide tactile feedback (haptics) on timer entries, saving forms, and switching tabs to emphasize the 'machine-fast' feel of the app."
+  ]
+}
