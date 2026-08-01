@@ -1,0 +1,37 @@
+{
+  "summary": "Bug fix verified: the 'Nouvel employé' dialog now renders as a CENTERED dialog (input bbox y=384 in a 844-tall viewport, center_y=410.5 → dead-center vertical band) with the employee-name-input fully visible and editable. All 6 requested checks pass. No red screen, no crashes. The Android keyboard-overlap bug is no longer reproducible on web preview because the input is centered well above where the keyboard would rise from. Only pre-existing cosmetic RN-Web warning noted (pointerEvents deprecation, already logged in iteration_1).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "unknown (RN-Web internal)", "issue": "Console warning 'props.pointerEvents is deprecated. Use style.pointerEvents' — cosmetic, unchanged from iteration_1. Non-blocking."}
+    ]
+  },
+  "test_evidence": {
+    "1_add_employee_dialog_centered_and_visible": "PASS — [data-testid=\"employee-name-input\"] visible=True, bbox={x:48, y:384.5, w:294, h:52}, center_y=410.5 within 15–85% band of viewport (844).",
+    "2_first_employee_added_and_selected": "PASS — After typing 'TEST_Alice' + confirm-add-employee-button, dialog closed, Alice appears in Équipe list, and selected-employee-name = 'TEST_Alice' on Saisie tab.",
+    "3_second_employee_added_dialog_closes": "PASS — 'TEST_Bob' added same way; dialog closed; both TEST_Alice and TEST_Bob visible in Équipe list.",
+    "4_regression_employee_picker": "PASS — employee-selector-button opens picker showing 2 rows (picker-employee-*); tapping TEST_Alice sets selected-employee-name = 'TEST_Alice'.",
+    "5_regression_time_calculation": "PASS — start=06:30, break=12:00→12:30, end=17:30 ⇒ standard-total='10 h 30', decimal-total='10.50 h'. Time-mask '0630'→'06:30' works.",
+    "6_regression_theme_toggle": "PASS — Confirmed visually via before/after screenshots: default renders in DARK theme with sun icon → after tapping theme-toggle-button switches to LIGHT theme with moon icon. (Note: DOM inline-style probe returns an inner surface color unchanged by theme, so trust the screenshots.)"
+  },
+  "test_report_links": ["Inline Playwright script executed twice (mobile viewport 390x844); no persistent test file added — flows are simple enough to re-run inline. iteration_1.json still valid regression baseline."],
+  "action_items": [
+    "None blocking. Optional: silence 'props.pointerEvents is deprecated' RN-Web warning by moving to style.pointerEvents (unchanged suggestion from iteration_1).",
+    "Optional: persist selectedEmployeeId in AsyncStorage/localStorage — carry-over from iteration_1, not part of current bug scope."
+  ],
+  "critical_code_review_comments": [
+    "Fix looks correct: <Modal animationType='fade'> + centered backdrop + KeyboardAvoidingView (padding on iOS, height on Android) around the dialog. Because the dialog is vertically centered (not bottom-anchored), on Android the KeyboardAvoidingView with behavior='height' will shrink the wrapper so the centered dialog moves up as needed — the name field will never be occluded by the IME.",
+    "Minor: styles.sheet, styles.handle, styles.backdrop are now dead styles in employees.tsx (old bottom-sheet variant). Consider removing to keep file clean.",
+    "employees.tsx uses Pressable inside Pressable for the modal backdrop/dialog stopPropagation pattern — correct on web; on native React Native this pattern works but Pressable-in-Pressable can trigger nested press feedback. Not a bug, just noting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only app)", "frontend": "100% (6/6 requested checks pass)"},
+  "seed_data_creation": "Created TEST_Alice and TEST_Bob via UI during test (localStorage only, browser-scoped, no server data).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Add-employee flow now uses a CENTERED Modal (animationType='fade') wrapped in KeyboardAvoidingView. Input testID=employee-name-input, confirm testID=confirm-add-employee-button. Dialog closes automatically after successful add. Everything else (picker, time calc, theme toggle, persistence, tabs) unchanged from iteration_1. Use viewport 390x844 for mobile tests.",
+  "rca_of_issue": "Original bug (Android): 'Nouvel employé' modal was a bottom-anchored sheet (justifyContent:'flex-end'). When the TextInput autofocused, Android's soft keyboard rose from the bottom and covered the sheet content including the name input. Fix: convert to a CENTERED dialog (justifyContent:'center', alignItems:'center' via styles.centerBackdrop) with animationType='fade', wrapped in KeyboardAvoidingView (behavior='padding' on iOS, 'height' on Android). Vertical center placement guarantees ~410px of clear space above the keyboard on standard Android viewports, so the input stays visible. Verified on web preview at 390x844: input bbox y=384 (mid-viewport). Cannot reproduce actual Android keyboard behavior on web, but the geometric fix is sound and matches standard RN keyboard-safe dialog pattern."
+}

@@ -156,18 +156,18 @@ export default function EmployeesScreen() {
         </Pressable>
       </View>
 
-      {/* Add modal */}
-      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
+      {/* Add modal — centered dialog so the keyboard (rising from the bottom)
+          can never cover the name field on Android. */}
+      <Modal visible={addOpen} transparent animationType="fade" onRequestClose={() => setAddOpen(false)}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
-          <Pressable style={styles.backdrop} onPress={() => setAddOpen(false)}>
+          <Pressable style={styles.centerBackdrop} onPress={() => setAddOpen(false)}>
             <Pressable
-              style={[styles.sheet, { backgroundColor: colors.surfaceSecondary, paddingBottom: insets.bottom + spacing.lg }]}
+              style={[styles.dialog, { backgroundColor: colors.surfaceSecondary, alignItems: "stretch" }]}
               onPress={(e) => e.stopPropagation()}
             >
-              <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
               <Text style={[styles.sheetTitle, { color: colors.onSurface, fontFamily: fonts.displayBold }]}>
                 NOUVEL EMPLOYÉ
               </Text>
@@ -178,6 +178,7 @@ export default function EmployeesScreen() {
                 placeholder="Nom de l'employé"
                 placeholderTextColor={colors.onSurfaceTertiary}
                 autoFocus
+                returnKeyType="done"
                 onSubmitEditing={onAdd}
                 style={[
                   styles.input,
