@@ -16,14 +16,12 @@ jobs:
         with:
           node-version: 18
 
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install EAS CLI Globally
+        run: npm install -g eas-cli
 
       - name: Install dependencies & Build APK
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           cd frontend
           npm install --legacy-peer-deps
