@@ -34,20 +34,26 @@ export default function SummaryScreen() {
   const insets = useSafeAreaInsets();
   const {
     employees,
+    companies,
+    companyName,
     selectedEmployeeId,
     setSelectedEmployeeId,
     entriesForMonth,
   } = useStore();
 
   const [monthKey, setMonthKey] = useState(currentMonthKey());
+  const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [busy, setBusy] = useState<null | "pdf" | "csv">(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const employee = employees.find((e) => e.id === selectedEmployeeId);
-  const entries = useMemo(
-    () => (selectedEmployeeId ? entriesForMonth(selectedEmployeeId, monthKey) : []),
-    [selectedEmployeeId, monthKey, entriesForMonth],
-  );
+  const entries = useMemo(() => {
+    if (!selectedEmployeeId) return [];
+    const all = entriesForMonth(selectedEmployeeId, monthKey);
+    if (companyFilter === "all") return all;
+    if (companyFilter === "none") return all.filter((e) => !e.companyId);
+    return all.filter((e) => e.companyId === companyFilter);
+  }, [selectedEmployeeId, monthKey, companyFilter, entriesForMonth]);
 
   const totalMin = useMemo(
     () => entries.reduce((s, e) => s + workedMinutes(e), 0),
@@ -72,8 +78,8 @@ export default function SummaryScreen() {
     try {
       setBusy(kind);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (kind === "pdf") await exportPDF(employee, monthKey, entries);
-      else await exportCSV(employee, monthKey, entries);
+      if (kind === "pdf") await exportPDF(employee, monthKey, entries, companyName);
+      else await exportCSV(employee, monthKey, entries, companyName);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Échec de l'export";
       showToast(msg);
@@ -155,6 +161,51 @@ export default function SummaryScreen() {
         </Pressable>
       </View>
 
+      {/* Company filter chips */}
+      {companies.length > 0 ? (
+        <View style={{ borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {[
+              { id: "all", name: "Toutes" },
+              ...companies.map((c) => ({ id: c.id, name: c.name })),
+              { id: "none", name: "Sans entreprise" },
+            ].map((opt) => {
+              const active = opt.id === companyFilter;
+              return (
+                <Pressable
+                  key={opt.id}
+                  testID={`company-filter-${opt.id}`}
+                  onPress={() => {
+                    setCompanyFilter(opt.id);
+                    Haptics.selectionAsync();
+                  }}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: active ? colors.brandTertiary : colors.surfaceTertiary,
+                      borderColor: active ? colors.brandPrimary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      { color: active ? colors.onBrandTertiary : colors.onSurfaceTertiary, fontFamily: fonts.textMedium },
+                    ]}
+                  >
+                    {opt.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+
       <ScrollView
         contentContainerStyle={{ paddingBottom: bottomPad }}
         showsVerticalScrollIndicator={false}
@@ -217,6 +268,14 @@ export default function SummaryScreen() {
                     <Text style={[styles.dayStd, { color: colors.onSurfaceTertiary, fontFamily: fonts.text }]}>
                       {formatStandard(min)}
                     </Text>
+                    {e.companyId ? (
+                      <View style={[styles.companyTag, { backgroundColor: colors.brandTertiary }]}>
+                        <Feather name="briefcase" size={10} color={colors.onBrandTertiary} />
+                        <Text style={[styles.companyTagText, { color: colors.onBrandTertiary, fontFamily: fonts.textMedium }]} numberOfLines={1}>
+                          {companyName(e.companyId)}
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                   <Text style={[styles.dayDec, { color: colors.brandPrimary, fontFamily: fonts.displayBold }]}>
                     {toDecimal(min)}
@@ -233,7 +292,7 @@ export default function SummaryScreen() {
       <View
         style={[
           styles.exportBar,
-          { paddingBottom: insets.bottom + spacing.sm, backgroundColor: colors.surface, borderTopColor: colors.divider },
+          { paddingBottom: spacing.md, backgroundColor: colors.surface, borderTopColor: colors.divider },
         ]}
       >
         <Pressable
@@ -290,6 +349,28 @@ const styles = StyleSheet.create({
   },
   chipText: { fontSize: fontSize.base },
   chipEmpty: { fontSize: fontSize.base },
+  filterRow: { paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, gap: spacing.sm, alignItems: "center" },
+  filterChip: {
+    height: 36,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  filterChipText: { fontSize: fontSize.sm },
+  companyTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    marginTop: 4,
+    maxWidth: 200,
+  },
+  companyTagText: { fontSize: 11 },
   monthRow: {
     flexDirection: "row",
     alignItems: "center",

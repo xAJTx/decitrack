@@ -42,6 +42,9 @@ export default function TimeEntryScreen() {
   const insets = useSafeAreaInsets();
   const {
     employees,
+    companies,
+    addCompany,
+    companyName,
     selectedEmployeeId,
     setSelectedEmployeeId,
     getEntry,
@@ -54,7 +57,11 @@ export default function TimeEntryScreen() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [breaks, setBreaks] = useState<Break[]>([DEFAULT_BREAK]);
+  const [companyId, setCompanyId] = useState<string | undefined>(undefined);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [companyPickerOpen, setCompanyPickerOpen] = useState(false);
+  const [addCompanyOpen, setAddCompanyOpen] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId);
@@ -67,10 +74,12 @@ export default function TimeEntryScreen() {
       setStart(existing.start);
       setEnd(existing.end);
       setBreaks(existing.breaks.length ? existing.breaks : []);
+      setCompanyId(existing.companyId);
     } else {
       setStart("");
       setEnd("");
       setBreaks([DEFAULT_BREAK]);
+      setCompanyId(undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedEmployeeId, dateKey]);
@@ -109,6 +118,7 @@ export default function TimeEntryScreen() {
     }
     upsertEntry({
       employeeId: selectedEmployeeId,
+      companyId,
       date: dateKey,
       start,
       end,
@@ -124,9 +134,21 @@ export default function TimeEntryScreen() {
       setStart("");
       setEnd("");
       setBreaks([DEFAULT_BREAK]);
+      setCompanyId(undefined);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       showToast("Entrée supprimée");
     }
+  };
+
+  const onAddCompany = () => {
+    const trimmed = newCompanyName.trim();
+    if (!trimmed) return;
+    const comp = addCompany(trimmed);
+    setCompanyId(comp.id);
+    setNewCompanyName("");
+    setAddCompanyOpen(false);
+    setCompanyPickerOpen(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const bottomPad = insets.bottom + 96;
@@ -286,6 +308,32 @@ export default function TimeEntryScreen() {
 
           {/* Form */}
           <View style={styles.formSection}>
+            {/* Company / site selector */}
+            <Text style={[styles.fieldLabel, { color: colors.onSurfaceTertiary, fontFamily: fonts.textMedium }]}>
+              ENTREPRISE / CHANTIER
+            </Text>
+            <Pressable
+              testID="company-selector-button"
+              onPress={() => setCompanyPickerOpen(true)}
+              style={[
+                styles.companySelector,
+                { backgroundColor: colors.surfaceTertiary, borderColor: colors.border },
+              ]}
+            >
+              <Feather name="briefcase" size={18} color={colors.brandPrimary} />
+              <Text
+                testID="selected-company-name"
+                style={[
+                  styles.companyName,
+                  { color: companyId ? colors.onSurface : colors.onSurfaceTertiary, fontFamily: fonts.textSemi },
+                ]}
+                numberOfLines={1}
+              >
+                {companyId ? companyName(companyId) : "Aucune — appuyez pour choisir"}
+              </Text>
+              <Feather name="chevron-down" size={20} color={colors.onSurfaceTertiary} />
+            </Pressable>
+
             <View style={styles.rowFields}>
               <TimeField
                 testID="start-input"
@@ -387,7 +435,7 @@ export default function TimeEntryScreen() {
       <View
         style={[
           styles.saveBar,
-          { paddingBottom: insets.bottom + spacing.sm, backgroundColor: colors.surface, borderTopColor: colors.divider },
+          { paddingBottom: spacing.md, backgroundColor: colors.surface, borderTopColor: colors.divider },
         ]}
       >
         <Pressable
@@ -464,6 +512,133 @@ export default function TimeEntryScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Company picker modal (bottom sheet: list + add row) */}
+      <Modal
+        visible={companyPickerOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCompanyPickerOpen(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setCompanyPickerOpen(false)}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: colors.surfaceSecondary, paddingBottom: insets.bottom + spacing.lg }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.sheetHandle, { backgroundColor: colors.borderStrong }]} />
+            <Text style={[styles.sheetTitle, { color: colors.onSurface, fontFamily: fonts.displayBold }]}>
+              ENTREPRISE / CHANTIER
+            </Text>
+
+            <Pressable
+              testID="open-add-company-button"
+              onPress={() => setAddCompanyOpen(true)}
+              style={[styles.addCompanyRow, { borderColor: colors.brandPrimary }]}
+            >
+              <Feather name="plus" size={18} color={colors.brandPrimary} />
+              <Text style={[styles.pickerName, { color: colors.brandPrimary, fontFamily: fonts.textSemi }]}>
+                Nouvelle entreprise
+              </Text>
+            </Pressable>
+
+            {/* Option: no company */}
+            <Pressable
+              testID="picker-company-none"
+              onPress={() => {
+                setCompanyId(undefined);
+                setCompanyPickerOpen(false);
+                Haptics.selectionAsync();
+              }}
+              style={[
+                styles.pickerRow,
+                { borderColor: !companyId ? colors.brandPrimary : colors.border, backgroundColor: colors.surfaceTertiary },
+              ]}
+            >
+              <View style={[styles.avatarSm, { backgroundColor: colors.surfaceSecondary }]}>
+                <Feather name="slash" size={16} color={colors.onSurfaceTertiary} />
+              </View>
+              <Text style={[styles.pickerName, { color: colors.onSurface, fontFamily: fonts.textSemi }]}>
+                Aucune
+              </Text>
+              {!companyId ? <Feather name="check" size={20} color={colors.brandPrimary} /> : null}
+            </Pressable>
+
+            {companies.map((comp) => {
+              const active = comp.id === companyId;
+              return (
+                <Pressable
+                  key={comp.id}
+                  testID={`picker-company-${comp.id}`}
+                  onPress={() => {
+                    setCompanyId(comp.id);
+                    setCompanyPickerOpen(false);
+                    Haptics.selectionAsync();
+                  }}
+                  style={[
+                    styles.pickerRow,
+                    { borderColor: active ? colors.brandPrimary : colors.border, backgroundColor: colors.surfaceTertiary },
+                  ]}
+                >
+                  <View style={[styles.avatarSm, { backgroundColor: colors.brandTertiary }]}>
+                    <Feather name="briefcase" size={16} color={colors.onBrandTertiary} />
+                  </View>
+                  <Text style={[styles.pickerName, { color: colors.onSurface, fontFamily: fonts.textSemi }]} numberOfLines={1}>
+                    {comp.name}
+                  </Text>
+                  {active ? <Feather name="check" size={20} color={colors.brandPrimary} /> : null}
+                </Pressable>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Add company — centered dialog (keyboard-safe) */}
+      <Modal
+        visible={addCompanyOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddCompanyOpen(false)}
+      >
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <Pressable style={styles.centerBackdrop} onPress={() => setAddCompanyOpen(false)}>
+            <Pressable
+              style={[styles.dialog, { backgroundColor: colors.surfaceSecondary }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <Text style={[styles.sheetTitle, { color: colors.onSurface, fontFamily: fonts.displayBold }]}>
+                NOUVELLE ENTREPRISE
+              </Text>
+              <TextInput
+                testID="company-name-input"
+                value={newCompanyName}
+                onChangeText={setNewCompanyName}
+                placeholder="Nom de l'entreprise / chantier"
+                placeholderTextColor={colors.onSurfaceTertiary}
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={onAddCompany}
+                style={[
+                  styles.dialogInput,
+                  { backgroundColor: colors.surfaceTertiary, color: colors.onSurface, borderColor: colors.border, fontFamily: fonts.textMedium },
+                ]}
+              />
+              <Pressable
+                testID="confirm-add-company-button"
+                onPress={onAddCompany}
+                style={[styles.dialogBtn, { backgroundColor: colors.brandPrimary }]}
+              >
+                <Text style={[styles.dialogBtnText, { color: colors.onBrandPrimary, fontFamily: fonts.textBold }]}>
+                  Ajouter
+                </Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -534,6 +709,52 @@ const styles = StyleSheet.create({
   heroDec: { fontSize: 48, lineHeight: 50 },
   heroUnit: { fontSize: 22 },
   formSection: { paddingHorizontal: spacing.lg, marginTop: spacing.xl },
+  fieldLabel: {
+    fontSize: fontSize.sm,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: spacing.xs,
+  },
+  companySelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    height: 52,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  companyName: { flex: 1, fontSize: fontSize.lg },
+  addCompanyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  centerBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  dialog: { width: "100%", borderRadius: radius.lg, padding: spacing.xl },
+  dialogInput: {
+    height: 52,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSize.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+  },
+  dialogBtn: { height: 52, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  dialogBtnText: { fontSize: fontSize.lg },
   rowFields: { flexDirection: "row" },
   breaksHeader: {
     flexDirection: "row",
