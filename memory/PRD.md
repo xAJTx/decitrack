@@ -36,8 +36,14 @@ Exemple de référence: 06:30 → pause 12:00/12:30 → 17:30 = 10 h 30 standard
 - ✅ Persistance locale (employés, entrées, thème, employé sélectionné)
 - ✅ Testé par testing agent: 11/11 features PASS, calcul exact du cas d'exemple confirmé
 
+## Implemented — later iterations
+- ✅ (2026-08-01) Fix add-employee: dialogue centré keyboard-safe (le champ nom était masqué par le clavier Android)
+- ✅ (2026-08-01) Fix export PDF/CSV: migration API stable SDK 54 `File`/`Paths`, garde anti-double-tap, messages d'erreur
+- ✅ (2026-08-02) Fix safe-area: la barre d'onglets inclut `insets.bottom` (plus de chevauchement avec la barre de navigation Android) ; barres d'action collantes à 12px du bas
+- ✅ (2026-08-02) Feature multi-entreprises : champ `Entreprise/Chantier` par entrée journalière, création de plusieurs entreprises, filtre par entreprise dans Récap, étiquette par ligne, colonne Entreprise dans exports CSV/PDF
+
 ## Backlog / Next
 - P1: Restaurer plus robustement l'employé sélectionné après reload (fallback déjà présent)
 - P2: Vue calendrier mensuel complet (grille) en plus de la bande hebdo
+- P2: Total d'heures par entreprise (sous-totaux par employeur/chantier) dans le récap
 - P2: Heures supplémentaires / seuil hebdomadaire configurable
-- P2: Refactor `app/(tabs)/index.tsx` en sous-composants
