@@ -16,7 +16,14 @@ export type Employee = {
   createdAt: string;
 };
 
+export type Company = {
+  id: string;
+  name: string;
+  createdAt: string;
+};
+
 const EMP_KEY = "decitrack:employees";
+const COMP_KEY = "decitrack:companies";
 const ENTRIES_KEY = "decitrack:entries";
 const SELECTED_KEY = "decitrack:selectedEmployee";
 
@@ -27,12 +34,16 @@ function uid(): string {
 type StoreValue = {
   ready: boolean;
   employees: Employee[];
+  companies: Company[];
   entries: Entry[];
   selectedEmployeeId: string | null;
   setSelectedEmployeeId: (id: string | null) => void;
   addEmployee: (name: string) => Employee;
   removeEmployee: (id: string) => void;
   renameEmployee: (id: string, name: string) => void;
+  addCompany: (name: string) => Company;
+  removeCompany: (id: string) => void;
+  companyName: (id?: string) => string;
   upsertEntry: (entry: Omit<Entry, "id" | "createdAt"> & { id?: string }) => void;
   deleteEntry: (id: string) => void;
   getEntry: (employeeId: string, date: string) => Entry | undefined;
@@ -44,6 +55,7 @@ const StoreContext = createContext<StoreValue | undefined>(undefined);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeIdState] = useState<
     string | null
@@ -51,13 +63,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [emp, ent, sel] = await Promise.all([
+      const [emp, comp, ent, sel] = await Promise.all([
         storage.getItem<Employee[]>(EMP_KEY, []),
+        storage.getItem<Company[]>(COMP_KEY, []),
         storage.getItem<Entry[]>(ENTRIES_KEY, []),
         storage.getItem<string | null>(SELECTED_KEY, null),
       ]);
       const empList = emp ?? [];
       setEmployees(empList);
+      setCompanies(comp ?? []);
       setEntries(ent ?? []);
       setSelectedEmployeeIdState(
         sel && empList.some((e) => e.id === sel)
@@ -77,6 +91,42 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setEntries(next);
     storage.setItem(ENTRIES_KEY, next);
   }, []);
+
+  const persistCompanies = useCallback((next: Company[]) => {
+    setCompanies(next);
+    storage.setItem(COMP_KEY, next);
+  }, []);
+
+  const addCompany = useCallback(
+    (name: string) => {
+      const comp: Company = {
+        id: uid(),
+        name: name.trim(),
+        createdAt: new Date().toISOString(),
+      };
+      persistCompanies([...companies, comp]);
+      return comp;
+    },
+    [companies, persistCompanies],
+  );
+
+  const removeCompany = useCallback(
+    (id: string) => {
+      persistCompanies(companies.filter((c) => c.id !== id));
+      // Detach the removed company from any entries that referenced it.
+      persistEntries(
+        entries.map((e) =>
+          e.companyId === id ? { ...e, companyId: undefined } : e,
+        ),
+      );
+    },
+    [companies, entries, persistCompanies, persistEntries],
+  );
+
+  const companyName = useCallback(
+    (id?: string) => companies.find((c) => c.id === id)?.name ?? "",
+    [companies],
+  );
 
   const setSelectedEmployeeId = useCallback((id: string | null) => {
     setSelectedEmployeeIdState(id);
@@ -179,12 +229,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ready,
       employees,
+      companies,
       entries,
       selectedEmployeeId,
       setSelectedEmployeeId,
       addEmployee,
       removeEmployee,
       renameEmployee,
+      addCompany,
+      removeCompany,
+      companyName,
       upsertEntry,
       deleteEntry,
       getEntry,
@@ -193,12 +247,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [
       ready,
       employees,
+      companies,
       entries,
       selectedEmployeeId,
       setSelectedEmployeeId,
       addEmployee,
       removeEmployee,
       renameEmployee,
+      addCompany,
+      removeCompany,
+      companyName,
       upsertEntry,
       deleteEntry,
       getEntry,

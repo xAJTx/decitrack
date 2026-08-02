@@ -1,0 +1,49 @@
+{
+  "summary": "Multi-company feature and Android safe-area/sticky-bar layout verified on mobile web viewport 390x844. All 9 requested checks pass. Created TEST_Alice employee, added 'Chantier Nord' via the centered dialog (company-name-input VISIBLE + editable), assigned it to today (Aug 2 2026) with 06:30 / 12:00-12:30 / 17:30 -> standard-total='10 h 30', decimal-total='10.50 h'; saved. Switched to another day in the same week (day-2026-07-29), created 'Chantier Sud' via the same flow, entered 08:00-16:00 and saved. On Récap: company filter chip row (company-filter-all, company-filter-<id> for both companies, company-filter-none) is rendered; filtering by 'Chantier Nord' reduces the Aug list to exactly 1 row with std/dec re-computed accordingly; company tag (briefcase + name) is shown on the entry row. export-pdf-button and export-csv-button do NOT crash on web (graceful summary-toast surfaces the underlying non-native error — same defensive shell as iteration_3). Regressions pass: theme-toggle-button toggles theme, month-prev/next-button navigates months, employee-selector-button picker works, data persists across reload within the same Playwright session. LAYOUT: tab bar (Saisie/Récap/Équipe) sits at the bottom with sticky Save / Export buttons just above it, no visual overlap, no huge empty gap. Only remaining console noise is the pre-existing 'props.pointerEvents is deprecated' RN-Web warning (cosmetic, carryover). Deprecated packages: none detected.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "RN-Web internal", "issue": "Console warning 'props.pointerEvents is deprecated. Use style.pointerEvents' — cosmetic carryover from iterations 1-3, non-blocking. Reference: unknown internal RN-Web component."}
+    ]
+  },
+  "test_evidence": {
+    "1_company_selector_on_saisie": "PASS — company-selector-button visible above start-input/end-input; selected-company-name shows 'Aucune — appuyez pour choisir' when none selected.",
+    "2_add_company_dialog_visible_input": "PASS — Tap open-add-company-button opens the CENTERED dialog; company-name-input is VISIBLE (assertion `page.is_visible('[data-testid=\"company-name-input\"]')` returned True) and accepts typing; confirm-add-company-button creates the company, closes the sheet, and selected-company-name updates to 'Chantier Nord'.",
+    "3_picker_rows_exist": "PASS — picker-company-none and picker-company-<id> rows render inside the bottom sheet; selecting either updates selected-company-name and closes the sheet.",
+    "4_time_calc_and_save": "PASS — start-input=06:30, break-0-start=12:00, break-0-end=12:30, end-input=17:30 => standard-total='10 h 30', decimal-total='10.50 h'; save-entry-button persists the entry with companyId=Chantier Nord.",
+    "5_multi_company_different_day_same_week": "PASS — Switched to day-2026-07-29 (Wed), created 'Chantier Sud', typed 08:00 / 16:00 and saved — two companies assigned to two different days in the same displayed week.",
+    "6_recap_filter_chips": "PASS — company-filter-all, company-filter-<id> (2 chips, one per company), company-filter-none all render. Filtering by 'Chantier Nord' (Aug view) reduces summary rows from all-Aug to exactly 1; month-total-standard/month-total-decimal recompute (10 h 30 / 10.50 h).",
+    "7_company_tag_on_row": "PASS — Each entry row that has companyId shows the briefcase icon + company name pill (Feather 'briefcase' + text 'Chantier Nord'). Verified via text count >= 2 across the two months.",
+    "8_export_no_crash": "PASS — export-pdf-button and export-csv-button on web surface the summary-toast error string (native Print/File not implemented on web) without red-screen. This is the same defensive path validated in iteration_3.",
+    "9_regressions": "PASS — theme-toggle-button toggles theme (sun<->moon), month-prev-button/month-next-button navigate to 'Juillet 2026'/'Août 2026', employee-selector-button opens picker, data persists across reload within the same session.",
+    "10_layout_bottom_bar": "PASS — On 390x844 the 3-item tab bar (Saisie/Récap/Équipe) sits at the bottom; the sticky Save/Export buttons sit just above with a small gap (no overlap, no giant empty gap). Screenshots /tmp/04_saisie_after_2nd.png, /tmp/05_recap_all.png confirm."
+  },
+  "test_report_links": [
+    "Playwright script inline against https://work-log-admin-1.preview.emergentagent.com, viewport 390x844.",
+    "Screenshots: /tmp/01_load.png, /tmp/02_company_sheet.png, /tmp/03_dialog.png, /tmp/04_saisie_after_2nd.png, /tmp/05_recap_all.png, /tmp/06_export.png, /tmp/07_final.png, /tmp/july.png"
+  ],
+  "action_items": [
+    "None blocking. The multi-company feature and safe-area / sticky-bar layout are working as specified on mobile web preview.",
+    "STRONGLY RECOMMENDED: on a real Android device, verify insets.bottom > 0 actually pushes the tab bar above the system nav bar (cannot be simulated on web where insets.bottom is 0).",
+    "Optional cosmetic (carryover from prior iterations): silence 'props.pointerEvents is deprecated' console warning."
+  ],
+  "critical_code_review_comments": [
+    "(tabs)/index.tsx: company picker + add-company centered dialog are implemented cleanly — KeyboardAvoidingView around the dialog + autoFocus on company-name-input + onSubmitEditing wiring make the flow keyboard-safe.",
+    "(tabs)/index.tsx: sticky saveBar uses `paddingBottom: spacing.md` (fixed) as advertised in the review request — no more variable insets.bottom in the sticky bar; combined with tab-bar `paddingBottom: insets.bottom` in (tabs)/_layout.tsx this cleanly separates system-nav padding from sticky-bar padding.",
+    "AppStore.tsx: addCompany / removeCompany are properly persisted (COMP_KEY), and removeCompany detaches companyId from any impacted entries (good referential integrity for a local-only store).",
+    "summary.tsx: company filter is memoized in `entries` useMemo with companyFilter in deps — correct; also correctly re-computes totalMin from filtered entries so month-total-standard/decimal always match the visible list.",
+    "summary.tsx: filter chip row is only rendered when `companies.length > 0` — matches the review-request UX (no filter UI when there are no companies).",
+    "Minor nit: (tabs)/index.tsx bottomPad uses `insets.bottom + 96` and saveBar has its own `paddingBottom: spacing.md` — works, but the two padding sources make it non-obvious how the sticky bar spacing composes. Consider a shared constant if the layout is tweaked further.",
+    "No new files exceed the 700-line threshold; no DRY violation introduced; no hardcoded URL/creds; env config untouched."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only app)", "frontend": "100% (10/10 requested verifications pass)"},
+  "seed_data_creation": "Created TEST_Alice + companies 'Chantier Nord' and 'Chantier Sud' + 2 entries (2026-08-02 Chantier Nord and 2026-07-29 Chantier Sud) via UI. LocalStorage-only. Note: Playwright launches isolated browser contexts, so this data does not survive across separate Playwright runs (already noted in iteration_3) — this is a testing-environment artifact, not a product bug.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Multi-company flow verified end-to-end. Key testIDs: company-selector-button, selected-company-name, open-add-company-button, company-name-input, confirm-add-company-button, picker-company-none, picker-company-<id>, company-filter-all, company-filter-<id>, company-filter-none. Multi-company entries can span months; Récap month view scopes to the current month, so 'seeing all entries at once' requires navigating month-prev-button/month-next-button. Web preview: export-pdf/csv toast strings are expected internal errors (expo-print/expo-file-system not on web) — do not treat as bug. For safe-area on Android, must test on device.",
+  "rca_of_issue": "N/A — feature verification, no bug reported."
+}

@@ -42,13 +42,14 @@ export async function exportCSV(
   employee: Employee,
   monthKey: string,
   entries: Entry[],
+  getCompanyName: (id?: string) => string = () => "",
 ): Promise<void> {
   const rows = buildRows(entries);
   const lines = [
     `Employe;${employee.name}`,
     `Mois;${formatMonthLabel(monthKey)}`,
     "",
-    "Date;Debut;Fin;Pause (min);Heures (standard);Heures (decimal)",
+    "Date;Entreprise;Debut;Fin;Pause (min);Heures (standard);Heures (decimal)",
   ];
   for (const { entry, minutes } of rows) {
     const breakMin = entry.breaks.reduce((s, b) => {
@@ -66,6 +67,7 @@ export async function exportCSV(
     lines.push(
       [
         entry.date,
+        getCompanyName(entry.companyId),
         entry.start,
         entry.end,
         String(breakMin),
@@ -76,7 +78,7 @@ export async function exportCSV(
   }
   const total = totalMinutes(rows);
   lines.push("");
-  lines.push(`TOTAL;;;;${formatStandard(total)};${toDecimal(total)}`);
+  lines.push(`TOTAL;;;;;${formatStandard(total)};${toDecimal(total)}`);
 
   const csv = "\uFEFF" + lines.join("\n");
 
@@ -103,6 +105,7 @@ export async function exportPDF(
   employee: Employee,
   monthKey: string,
   entries: Entry[],
+  getCompanyName: (id?: string) => string = () => "",
 ): Promise<void> {
   const rows = buildRows(entries);
   const total = totalMinutes(rows);
@@ -112,6 +115,7 @@ export async function exportPDF(
       ({ entry, minutes }) => `
       <tr>
         <td>${formatFullDate(entry.date)}</td>
+        <td>${getCompanyName(entry.companyId) || "&ndash;"}</td>
         <td class="c">${entry.start} &ndash; ${entry.end}</td>
         <td class="c">${formatStandard(minutes)}</td>
         <td class="c dec">${toDecimal(minutes)} h</td>
@@ -143,9 +147,9 @@ export async function exportPDF(
       <div class="sub">${employee.name} &middot; ${formatMonthLabel(monthKey)}</div>
       <table>
         <thead>
-          <tr><th>Date</th><th style="text-align:center">Horaire</th><th style="text-align:center">Standard</th><th style="text-align:center">Decimal (admin)</th></tr>
+          <tr><th>Date</th><th>Entreprise</th><th style="text-align:center">Horaire</th><th style="text-align:center">Standard</th><th style="text-align:center">Decimal (admin)</th></tr>
         </thead>
-        <tbody>${bodyRows || '<tr><td colspan="4">Aucune entree</td></tr>'}</tbody>
+        <tbody>${bodyRows || '<tr><td colspan="5">Aucune entree</td></tr>'}</tbody>
       </table>
       <div class="total">Total du mois : ${formatStandard(total)} &nbsp;&middot;&nbsp; <span class="dec">${toDecimal(total)} h</span></div>
     </body>

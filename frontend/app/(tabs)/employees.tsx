@@ -141,7 +141,7 @@ export default function EmployeesScreen() {
       <View
         style={[
           styles.addBar,
-          { paddingBottom: insets.bottom + spacing.sm, backgroundColor: colors.surface, borderTopColor: colors.divider },
+          { paddingBottom: spacing.md, backgroundColor: colors.surface, borderTopColor: colors.divider },
         ]}
       >
         <Pressable

@@ -5,6 +5,7 @@ export type Break = { start: string; end: string };
 export type Entry = {
   id: string;
   employeeId: string;
+  companyId?: string;
   date: string; // YYYY-MM-DD
   start: string; // HH:MM
   end: string; // HH:MM
