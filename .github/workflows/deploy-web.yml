@@ -25,11 +25,7 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          
-          # Le -c à la fin est crucial : il force Expo à vider sa mémoire !
-          EXPO_PUBLIC_BASE_PATH=/decitrack npx expo export -c
-          
-          # Empêche GitHub Pages de masquer le dossier _expo
+          npx expo export -c
           touch dist/.nojekyll
 
       - name: Upload artifact
