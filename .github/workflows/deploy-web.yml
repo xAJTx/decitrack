@@ -26,7 +26,8 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          npx expo export
+          EXPO_BASE_URL=/decitrack npx expo export
+          touch dist/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
