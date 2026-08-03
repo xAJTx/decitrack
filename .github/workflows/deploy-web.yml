@@ -26,7 +26,9 @@ jobs:
           cd frontend
           npm install --legacy-peer-deps
           npx expo export -c
-          touch dist/.nojekyll
+          
+      - name: Autoriser le dossier _expo (Fix Jekyll)
+        run: touch frontend/dist/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
