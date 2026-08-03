@@ -26,7 +26,7 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          npx expo export
+          EXPO_BASE_URL=/decitrack EXPO_PUBLIC_BASE_PATH=/decitrack npx expo export
           
           # 1. Empêche GitHub Pages de masquer les dossiers d'Expo
           touch dist/.nojekyll
