@@ -25,14 +25,8 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          
-          # Fixe le chemin web et vide la mémoire cache (-c)
           EXPO_PUBLIC_BASE_PATH=/decitrack npx expo export -c
-          
-          # Autorise les dossiers techniques
           touch dist/.nojekyll
-          
-          # Le filet de sécurité anti-404 pour GitHub Pages !
           cp dist/index.html dist/404.html
 
       - name: Upload artifact
