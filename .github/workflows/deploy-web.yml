@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main ]
 
-# Donne les permissions à GitHub de publier la page web
 permissions:
   contents: read
   pages: write
@@ -26,14 +25,15 @@ jobs:
         run: |
           cd frontend
           npm install --legacy-peer-deps
-          npx expo export
           
-          # 1. Empêche GitHub Pages de masquer les dossiers d'Expo
+          # Fixe le chemin web et vide la mémoire cache (-c)
+          EXPO_PUBLIC_BASE_PATH=/decitrack npx expo export -c
+          
+          # Autorise les dossiers techniques
           touch dist/.nojekyll
           
-          # 2. Correction de force brute : ajoute le nom du projet devant les chemins absolus
-          sed -i 's|href="/|href="/decitrack/|g' dist/index.html
-          sed -i 's|src="/|src="/decitrack/|g' dist/index.html
+          # Le filet de sécurité anti-404 pour GitHub Pages !
+          cp dist/index.html dist/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
